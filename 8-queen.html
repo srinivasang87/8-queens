@@ -1,0 +1,417 @@
+<html>
+<head>
+<title>8 queen chess puzzle</title>
+<meta name="description" content="Solve the age old 8 queen puzzle right from your browser"   >
+<meta name="keywords" content="8,queen,puzzle,chess,chessboard,board,game,queen (chess),algorithm,Eight queens puzzle"   >
+<style>
+.chesseven {
+  /* background-color: #FFCE9E; */
+  background-image: url('n-queen-images/piece-light.png');
+  width: 40px;
+  height: 40px;
+}
+.chessodd {
+  /* background-color: #D18B47; */
+  background-image: url('n-queen-images/piece-dark.png');
+  width: 40px;
+  height: 40px;
+}
+.chessnostyle{
+  /* background-color: white; */
+  background: transparent;
+  color: white;
+  font-weight: bold;
+  width: 40px;
+  height: 40px;
+}
+
+.red {
+  color: red;
+}
+
+.green {
+  color: green;
+  font-weight: bold;
+}
+
+.header {
+  font-family: Helevetica, Verdana, Arial;
+}
+
+#board {background-image: url('n-queen-images/board-bg.png');}
+
+.firstletter {font-size:xx-large;color:blue;}
+</style>
+
+<!--
+<script type="text/javascript" src="http://code.jquery.com/jquery.js"></script>
+<script src="ui.core.js"></script>
+<script src="ui.draggable.js"></script>
+<script src="ui.droppable.js"></script>
+-->
+
+<script type="text/javascript" src="jquery-1.2.3.min.js"></script>
+<script src="ui.core.js"></script>
+<script src="ui.draggable.js"></script>
+<script src="ui.droppable.js"></script>
+
+<script>
+// Array to hold selected squares
+selectedSquares = new Array();
+// Holds number of queens selected currently
+numberOfQueens = 0;
+  $(document).ready(function() {
+    // Hide all error messages and success messages on startup
+    $("#errorholder").hide(); $("#lowqueens").hide();
+
+    // Build the chess square
+    $("#board tr:even td:even").addClass("chessodd");
+    $("#board tr:even td:odd").addClass("chesseven");
+    $("#board tr:odd td:odd").addClass("chessodd");
+    $("#board tr:odd td:even").addClass("chesseven");
+
+    // On click of a square, this will happen:
+    $(".square").click(function() {
+
+      // User has clicked a square that has a queen already...
+      if($(this).hasClass("selectedSquare")) {
+        // If the chosen square is already selected, deselect it
+        $(this).removeClass("selectedSquare");
+        $(this).html("");
+        // Hide any red squares
+        $("#errorholder").hide();
+        // Track the count of queens
+        if(numberOfQueens >0) {
+          numberOfQueens = numberOfQueens - 1;
+        }
+        // Show the queens...
+        $(".selectedSquare img").attr("src", "n-queen-images/q.png");
+      } else {
+        // User has clicked an empty square
+        // If we havent reached 8 queens yet, we can allow the user to select this queen..
+        if(numberOfQueens < 8) {
+          // Hide any error messages
+          $("#lowqueens").hide();
+          // Keep track of count of queens
+          numberOfQueens = numberOfQueens + 1;
+          // Add the queen
+          $(this).html("<img id=" + this.id+"img- src='n-queen-images/q.png'>");
+          $(this).addClass("selectedSquare");
+          $(".selectedSquare img").attr("src", "n-queen-images/q.png");
+        } else {
+          // User is attempting to select queen #9. Show him an error..
+          $("#errorholder").hide().slideDown("slow");
+        }
+      }
+    });
+
+    // User has submitted the solution
+    $("#validate").click(function(){
+     // He must have chosen ATLEAST 8 queens..
+     if(numberOfQueens < 8) {
+       $("#lowqueens").hide().slideDown("slow");
+     } else {
+       // We have 8 queens! Push them into the selectedSquares array for validation :)
+       $(".selectedSquare img").each(function() {
+         selectedSquares.push(this.id);
+       });
+       // Time to apply the rules!
+       validate();
+     }
+    });
+
+
+  });
+
+  function init() {
+    // Reset the selected squares array
+    selectedSquares = new Array();
+  }
+
+  function validate() {
+    var rowsProhibited = new Array();
+    for(var queen in selectedSquares) {
+        // Detect the current row and column
+        column = selectedSquares[queen].substring(0,2);
+        row = selectedSquares[queen].substring(2,3);
+        var temprow = row;
+  	   	var tempcolumn = column;
+
+        // 1. No OTHER Square in same row
+        for(var tempqueen in selectedSquares) {
+          if(tempqueen == queen) {
+            continue;
+          }
+          var tempqueenrow = selectedSquares[tempqueen].substring(2,3);
+          // Do we have one more queen in the same row?
+          if(tempqueenrow == temprow) {
+            $("#"+selectedSquares[tempqueen]).attr("src", "n-queen-images/q-red.png");
+            $("#"+selectedSquares[queen]).attr("src", "n-queen-images/q-red.png");
+            init();
+            return false;
+          }
+        }
+
+        // 2. No OTHER Square in same column
+        for(var tempqueen1 in selectedSquares) {
+          if(tempqueen1 == queen) {
+		      continue;
+          }
+		  var tempqueencolumn = selectedSquares[tempqueen1].substring(0,2);
+          // Do we have one more queen in the same column?
+          if(tempqueencolumn == tempcolumn) {
+            $("#"+selectedSquares[tempqueen1]).attr("src", "n-queen-images/q-red.png");
+            $("#"+selectedSquares[queen]).attr("src", "n-queen-images/q-red.png");
+            init();
+            return false;
+          }
+
+
+        }
+
+        // 3. No OTHER queen in top right diagonal. This automatically covers BOTTOM LEFT DIAGONAL as well, as we are doing it iteratively!
+          // Take curr row. While row <= 8 && >= 1 && column <= 80 && >= 10, increase col by 10 and row by 1. Compare obtained sqr with curr sqr
+        var itemprowrd = parseInt(temprow) + 1;
+        var itempcolrd = parseInt(tempcolumn) + 10;
+        var tempid = "";
+        var sitemprowrd = itemprowrd.toString();
+        var stempcolrd = itempcolrd.toString();
+
+        while(itemprowrd >= 1 && itemprowrd <= 8 && itempcolrd >= 10 && itempcolrd <= 80) {
+          sitemprowrd = itemprowrd.toString();
+          stempcolrd = itempcolrd.toString();
+          tempid = stempcolrd + sitemprowrd +"img-";
+
+          if(jQuery.inArray(tempid, selectedSquares) > -1) {
+            $("#"+tempid).attr("src", "n-queen-images/q-red.png");
+            $("#"+selectedSquares[queen]).attr("src", "n-queen-images/q-red.png");
+
+            init();
+            return false;
+          }
+          itemprowrd = itemprowrd + 1;
+          itempcolrd = itempcolrd + 10;
+        }
+
+        // 4. No OTHER queen in top left diagonal.
+          // Take curr row. While row <= 8 && >= 1 && column <= 80 && >= 10, decrease col by 10 and row by 1. Compare obtained sqr with curr sqr
+        var itemprowld = parseInt(temprow) + 1;
+        var itempcolld = parseInt(tempcolumn) - 10;
+        var tempidld = "";
+        var sitemprowld = itemprowld.toString();
+        var stempcolld = itempcolld.toString();
+        while(itemprowld >= 1 && itemprowld <= 8 && itempcolld >= 10 && itempcolld <= 80) {
+          sitemprowld = itemprowld.toString();
+          stempcolld = itempcolld.toString();
+          tempidld = stempcolld + sitemprowld +"img-";
+
+          if(jQuery.inArray(tempidld, selectedSquares) > -1) {
+            $("#"+tempidld).attr("src", "n-queen-images/q-red.png");
+            $("#"+selectedSquares[queen]).attr("src", "n-queen-images/q-red.png");
+
+            init();
+            return false;
+          }
+
+          itemprowld = itemprowld + 1;
+          itempcolld = itempcolld - 10;
+        }
+
+
+     }
+
+
+     $(".selectedSquare img").attr("src", "n-queen-images/q-green.png");
+     var soln = 'The solution is: '; //console.log(selectedSquares);
+     $.each(selectedSquares.reverse(), function() {
+       soln = soln + ", " + this.substring(0,3);
+     });
+     soln = soln.replace('10', 'a');
+     soln = soln.replace('20', 'b');
+     soln = soln.replace('30', 'c');
+     soln = soln.replace('40', 'd');
+     soln = soln.replace('50', 'e');
+     soln = soln.replace('60', 'f');
+     soln = soln.replace('70', 'g');
+     soln = soln.replace('80', 'h');
+     $("#bot").html("Congrats!! "+soln).slideDown("slow");
+     init();
+   }
+
+/*
+   Rules for validation:
+   For a given square [say 606]
+   1. No OTHER Square in same row
+  	 Check squares ending with current row number must be chosen i.e 6
+   2. No OTHER Square in same column
+  	 Check squares starting with current column must be chosen number i.e 60
+   3. No OTHER squares in TOP RIGHT DIAGONAL
+  	 Check [col+10]+[row+1] combination i.e [60+10]+[6+1]=707, 808
+   4. No OTHER squares in BOTTOM RIGHT DIAGONAL
+  	 Check [col+10]+[row-1] combination i.e [60+10]+[6-1]=705, 804
+   3. No OTHER squares in TOP LEFT DIAGONAL
+  	 Check [col-10]+[row+1] combination i.e [60-10]+[6+1]=507, 408
+  3. No OTHER squares in BOTTOM LEFT DIAGONAL
+  	 Check [col-10]+[row-1] combination i.e [60-10]+[6-1]=505, 404, 303, 202, 101
+
+ NOTE: During any iteration, COLUMN NUMBER must be >=10 && <=80; ROW NUMBER must be >=1 && <=8
+*/
+</script>
+</head>
+<body>
+<!-- following code added by server. PLEASE REMOVE -->
+<link href="http://us.geocities.com/js_source/div.css" rel="stylesheet" type="text/css"><script language="JavaScript" src="http://us.geocities.com/js_source/div03.js"></script>
+<!-- preceding code added by server. PLEASE REMOVE -->
+
+
+<span class="header"><span class="firstletter">T</span>he eight queens puzzle is the problem of putting eight chess queens on an 8×8 chessboard such that none of them is able to capture any other using the standard chess queen's moves. Click on the squares to select/deselect queens</span>
+<span id="errorholder" class='red'>You have already chosen 8 queens. Please remove one or more queens by clicking on them and then choose new queens<br></span>
+<br/><br/>
+<div id="boardcontainer">
+<table id="board">
+<tr>
+<td class="chessnostyle"></td>
+<td class="chessnostyle">a</td>
+<td class="chessnostyle">b</td>
+<td class="chessnostyle">c</td>
+
+<td class="chessnostyle">d</td>
+<td class="chessnostyle">e</td>
+<td class="chessnostyle">f</td>
+<td class="chessnostyle">g</td>
+<td class="chessnostyle">h</td>
+<td class="chessnostyle"></td>
+</tr>
+
+<tr>
+<td class="chessnostyle">8</td>
+<td class="square" id="108"></td>
+
+<td class="square" id="208"></td>
+<td class="square" id="308"></td>
+<td class="square" id="408"></td>
+<td class="square" id="508"></td>
+<td class="square" id="608"></td>
+<td class="square" id="708"></td>
+<td class="square" id="808"></td>
+<td class="chessnostyle">8</td>
+</tr>
+
+<tr>
+<td class="chessnostyle">7</td>
+<td class="square" id="107"></td>
+<td class="square" id="207"></td>
+<td class="square" id="307"></td>
+
+<td class="square" id="407"></td>
+<td class="square" id="507"></td>
+<td class="square" id="607"></td>
+<td class="square" id="707"></td>
+<td class="square" id="807"></td>
+<td class="chessnostyle">7</td>
+</tr>
+
+<tr>
+<td class="chessnostyle">6</td>
+<td class="square" id="106"></td>
+<td class="square" id="206"></td>
+<td class="square" id="306"></td>
+<td class="square" id="406"></td>
+<td class="square" id="506"></td>
+
+<td class="square" id="606"></td>
+<td class="square" id="706"></td>
+<td class="square" id="806"></td>
+<td class="chessnostyle">6</td>
+</tr>
+
+<tr>
+<td class="chessnostyle">5</td>
+<td class="square" id="105"></td>
+<td class="square" id="205"></td>
+<td class="square" id="305"></td>
+<td class="square" id="405"></td>
+<td class="square" id="505"></td>
+<td class="square" id="605"></td>
+<td class="square" id="705"></td>
+
+<td class="square" id="805"></td>
+<td class="chessnostyle">5</td>
+</tr>
+
+<tr>
+<td class="chessnostyle">4</td>
+<td class="square" id="104"></td>
+<td class="square" id="204"></td>
+<td class="square" id="304"></td>
+<td class="square" id="404"></td>
+<td class="square" id="504"></td>
+<td class="square" id="604"></td>
+<td class="square" id="704"></td>
+<td class="square" id="804"></td>
+<td class="chessnostyle">4</td>
+
+</tr>
+
+<tr>
+<td class="chessnostyle">3</td>
+<td class="square" id="103"></td>
+<td class="square" id="203"></td>
+<td class="square" id="303"></td>
+<td class="square" id="403"></td>
+<td class="square" id="503"></td>
+<td class="square" id="603"></td>
+<td class="square" id="703"></td>
+<td class="square" id="803"></td>
+<td class="chessnostyle">3</td>
+</tr>
+
+<tr>
+<td class="chessnostyle">2</td>
+<td class="square" id="102"></td>
+<td class="square" id="202"></td>
+<td class="square" id="302"></td>
+<td class="square" id="402"></td>
+<td class="square" id="502"></td>
+<td class="square" id="602"></td>
+<td class="square" id="702"></td>
+<td class="square" id="802"></td>
+<td class="chessnostyle">2</td>
+</tr>
+
+<tr>
+<td class="chessnostyle">1</td>
+
+<td class="square" id="101"></td>
+<td class="square" id="201"></td>
+<td class="square" id="301"></td>
+<td class="square" id="401"></td>
+<td class="square" id="501"></td>
+<td class="square" id="601"></td>
+<td class="square" id="701"></td>
+<td class="square" id="801"></td>
+<td class="chessnostyle">1</td>
+</tr>
+
+<tr>
+<td class="chessnostyle"></td>
+<td class="chessnostyle">a</td>
+<td class="chessnostyle">b</td>
+
+<td class="chessnostyle">c</td>
+<td class="chessnostyle">d</td>
+<td class="chessnostyle">e</td>
+<td class="chessnostyle">f</td>
+<td class="chessnostyle">g</td>
+<td class="chessnostyle">h</td>
+<td class="chessnostyle"></td>
+</tr>
+
+</table>
+</div>
+
+<br>
+<span id="lowqueens" class='red'>You have to chosen 8 queens. Please choose more queen(s) by clicking on the empty squares</span><br>
+<span id="bot" class="green"><input type="button" name="validate" value="Submit solution" id="validate"/></span>
+</body>
+</html>
